@@ -20,22 +20,21 @@ steps:
       - |
         gcloud secrets versions access latest --secret=accuknox_token --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/decrypted-data.txt
 
-# Step 4: Push report to CSPM panel
+  # Step 4: Push report to CSPM panel
   - name: 'gcr.io/cloud-builders/curl'
     entrypoint: 'bash'
     args:
       - '-c'
-      - curl --location --request POST 'https://cspm.demo.accuknox.com/api/v1/artifact/?tenant_id=167&data_type=IAC&save_to_s3=false' \
-        --header 'Tenant-Id: 167' \
-        --header 'Authorization: Bearer $(cat /workspace/decrypted-data.txt)' \
-        --form 'file=@"checkov_report.json"'
-
+      - 'curl --location --request POST "https://cspm.demo.accuknox.com/api/v1/artifact/?tenant_id=${_TENANT_ID}&data_type=IAC&save_to_s3=false" \
+        --header "Tenant-Id: ${_TENANT_ID}" \
+        --header "Authorization: Bearer $(cat /workspace/decrypted-data.txt)" \
+        --form "file=@checkov_report.json"'
 
 # Artifacts to store the Checkov report
 artifacts:
   objects:
     location: 'gs://aditya-cicd-test/checkov-reports/'
-    paths: 
+    paths:
       - 'checkov_report.json'
 
 # Define substitutions
