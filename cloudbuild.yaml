@@ -10,7 +10,7 @@ steps:
     - '-c'
     - |
       pip install checkov && \
-      checkov -d /workspace/your-repo --output json > checkov_report.json || true
+      checkov -d /workspace/AccuKnox_Iac --output json > checkov_report.json || true
 
 
 # Step 4: Store the Checkov report as an artifact
