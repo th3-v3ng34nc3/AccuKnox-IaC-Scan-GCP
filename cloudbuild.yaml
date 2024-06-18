@@ -20,7 +20,8 @@ steps:
       - |
         apt-get update && \
         apt-get install -y jq && \
-        jq --arg repoLink "https://github.com/th3-v3ng34nc3/AccuKnox-IaC-Scan-GCP" --arg branch "main" '. += [{"details": {"repo": $repoLink, "branch": $branch}}]' checkov_report.json > temp.json && mv temp.json results.json
+        checkov_report=$(cat checkov_report.json) && \
+        echo $checkov_report | jq --arg repoLink "https://github.com/th3-v3ng34nc3/AccuKnox-IaC-Scan-GCP" --arg branch "main" '[.[] | . + {"details": {"repo": $repoLink, "branch": $branch}}]' > temp.json && mv temp.json results.json
 
   # Step 4: Access the secret using gcloud and save it to a file
   - name: 'gcr.io/cloud-builders/gcloud'
