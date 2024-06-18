@@ -20,15 +20,7 @@ steps:
       - |
         jq --arg repoLink "https://github.com/th3-v3ng34nc3/AccuKnox-IaC-Scan-GCP" --arg branch "main" '. += [{"details": {"repo": $repoLink, "branch": $branch}}]' checkov_report.json > temp.json && mv temp.json results.json
 
-  # Step 4: Store the Checkov report as an artifact
-  artifacts:
-    objects:
-      location: 'gs://aditya-cicd-test/checkov-reports/'
-      paths: 
-        - 'checkov_report.json'
-        - 'results.json'
-
-  # Step 5: Access the secret using gcloud and save it to a file
+  # Step 4: Access the secret using gcloud and save it to a file
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
@@ -36,7 +28,7 @@ steps:
       - |
         gcloud secrets versions access latest --secret=accuknox_token --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/decrypted-data.txt
 
-  # Step 6: Push report to CSPM panel
+  # Step 5: Push report to CSPM panel
   - name: 'curlimages/curl'
     entrypoint: 'bash'
     args:
@@ -46,6 +38,14 @@ steps:
         --header 'Tenant-Id: 167' \
         --header 'Authorization: Bearer $(cat /workspace/decrypted-data.txt)' \
         --form 'file=@"results.json"'
+
+# Artifacts to store the Checkov report
+artifacts:
+  objects:
+    location: 'gs://aditya-cicd-test/checkov-reports/'
+    paths: 
+      - 'checkov_report.json'
+      - 'results.json'
 
 # Define substitutions
 substitutions:
