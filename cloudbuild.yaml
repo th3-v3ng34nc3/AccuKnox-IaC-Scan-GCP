@@ -12,23 +12,26 @@ steps:
         pip install checkov && \
         checkov -d /workspace/AccuKnox_Iac --output json > checkov_report.json || true
 
-  # Step 3: Access the secret using gcloud and save it to a file
+# Step 3: Access the secret using gcloud and save it to a file
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
         gcloud secrets versions access latest --secret=accuknox_token --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/decrypted-data.txt
+        cat /workspace/decrypted-data.txt  # Debugging: Check the contents of decrypted-data.txt
 
-  # Step 4: Push report to CSPM panel
+# Step 4: Push report to CSPM panel
   - name: 'gcr.io/cloud-builders/curl'
     entrypoint: 'bash'
     args:
       - '-c'
-      - 'curl --location --request POST "https://cspm.demo.accuknox.com/api/v1/artifact/?tenant_id=${_TENANT_ID}&data_type=IAC&save_to_s3=false" \
+      - |
+        curl --location --request POST "https://${_CSPM_URL}/api/v1/artifact/?tenant_id=${_TENANT_ID}&data_type=IAC&save_to_s3=false" \
         --header "Tenant-Id: ${_TENANT_ID}" \
         --header "Authorization: Bearer $(cat /workspace/decrypted-data.txt)" \
-        --form "file=@checkov_report.json"'
+        --form "file=@/workspace/checkov_report.json"
+
 
 # Artifacts to store the Checkov report
 artifacts:
