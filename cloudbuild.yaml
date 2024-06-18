@@ -19,7 +19,7 @@ steps:
       - '-c'
       - |
         gcloud secrets versions access latest --secret=accuknox_token --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/decrypted-data.txt
-        cat /workspace/decrypted-data.txt  # Debugging: Check the contents of decrypted-data.txt
+        # Debugging: Check the contents of decrypted-data.txt
 
 # Step 4: Push report to CSPM panel
   - name: 'gcr.io/cloud-builders/curl'
