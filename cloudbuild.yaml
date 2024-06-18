@@ -12,6 +12,13 @@ steps:
       pip install checkov && \
       checkov -d /workspace/AccuKnox_Iac --output json > checkov_report.json || true
 
+# Step 3: Formatting the results
+- name: 'python:3.8'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      jq --arg repoLink "https://github.com/th3-v3ng34nc3/AccuKnox-IaC-Scan-GCP" --arg branch "main" '. += [{"details": {"repo": $repoLink, "branch": $branch}}]' checkov_report.json > temp.json && mv temp.json results.json
 
 # Step 4: Store the Checkov report as an artifact
 artifacts:
@@ -19,9 +26,34 @@ artifacts:
     location: 'gs://aditya-cicd-test/checkov-reports/'
     paths: 
       - 'checkov_report.json'
+      - 'results.json'
 
-# Substituting your-bucket-name with the name of your Google Cloud Storage bucket
+# Step 5: Access the secret using gcloud and save it to a file
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'bash'
+  args: [ 
+    '-c', 
+    "gcloud secrets versions access latest --secret=accuknox_token --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/decrypted-data.txt" 
+  ]
+  id: 'access-secret'
+
+# Step 6: Push report to CSPM panel
+- name: 'gcr.io/cloud-builders/curl'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      curl --location --request POST 'https://cspm.demo.accuknox.com/api/v1/artifact/?tenant_id=167&data_type=IAC&save_to_s3=false' \
+      --header 'Tenant-Id: 167' \
+      --header 'Authorization: Bearer $(cat /workspace/decrypted-data.txt)' \
+      --form 'file=@"results.json"'
+
+# Define substitutions
 substitutions:
+  _IMAGE_URL: 'gcr.io/shaped-infusion-402417/python-app'
+  _IMAGE_TAG: 'latest'
+  _CSPM_URL: 'cspm.demo.accuknox.com'
+  _TENANT_ID: '167'
   _BUCKET_NAME: 'gs://aditya-cicd-test'
 logsBucket: 'gs://aditya-cicd-test'
-timeout: '1200s' # 20 minutess
+timeout: '1200s' # 20 minutes
