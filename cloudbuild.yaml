@@ -29,5 +29,5 @@ artifacts:
 # Substituting your-bucket-name with the name of your Google Cloud Storage bucket
 substitutions:
   _BUCKET_NAME: 'gs://aditya-cicd-test'
-
+logsBucket: 'gs://aditya-cicd-test'
 timeout: '1200s' # 20 minutess
