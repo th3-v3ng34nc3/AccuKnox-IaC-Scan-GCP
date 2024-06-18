@@ -12,12 +12,14 @@ steps:
         pip install checkov && \
         checkov -d /workspace/AccuKnox_Iac --output json > checkov_report.json || true
 
-  # Step 3: Format the results
+  # Step 3: Install jq and format the results
   - name: 'python:3.8'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
+        apt-get update && \
+        apt-get install -y jq && \
         jq --arg repoLink "https://github.com/th3-v3ng34nc3/AccuKnox-IaC-Scan-GCP" --arg branch "main" '. += [{"details": {"repo": $repoLink, "branch": $branch}}]' checkov_report.json > temp.json && mv temp.json results.json
 
   # Step 4: Access the secret using gcloud and save it to a file
