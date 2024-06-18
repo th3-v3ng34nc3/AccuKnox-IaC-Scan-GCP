@@ -21,13 +21,11 @@ steps:
         gcloud secrets versions access latest --secret=accuknox_token --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/decrypted-data.txt
 
 # Step 4: Push report to CSPM panel
-  - name: 'debian'
+  - name: 'gcr.io/cloud-builders/curl'
     entrypoint: 'bash'
     args:
       - '-c'
-      - |
-        apt-get update && apt-get install -y curl
-        curl --location --request POST 'https://cspm.demo.accuknox.com/api/v1/artifact/?tenant_id=167&data_type=IAC&save_to_s3=false' \
+      - curl --location --request POST 'https://cspm.demo.accuknox.com/api/v1/artifact/?tenant_id=167&data_type=IAC&save_to_s3=false' \
         --header 'Tenant-Id: 167' \
         --header 'Authorization: Bearer $(cat /workspace/decrypted-data.txt)' \
         --form 'file=@"checkov_report.json"'
