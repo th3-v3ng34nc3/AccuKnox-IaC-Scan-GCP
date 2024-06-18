@@ -12,18 +12,7 @@ steps:
         pip install checkov && \
         checkov -d /workspace/AccuKnox_Iac --output json > checkov_report.json || true
 
-  # Step 3: Install jq and format the results
-  - name: 'python:3.8'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        apt-get update && \
-        apt-get install -y jq && \
-        checkov_report=$(cat checkov_report.json) && \
-        echo $checkov_report | jq --arg repoLink "https://github.com/th3-v3ng34nc3/AccuKnox-IaC-Scan-GCP" --arg branch "main" '[.[] | . + {"details": {"repo": $repoLink, "branch": $branch}}]' > temp.json && mv temp.json results.json
-
-  # Step 4: Access the secret using gcloud and save it to a file
+  # Step 3: Access the secret using gcloud and save it to a file
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
@@ -31,7 +20,7 @@ steps:
       - |
         gcloud secrets versions access latest --secret=accuknox_token --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/decrypted-data.txt
 
-  # Step 5: Push report to CSPM panel
+  # Step 4: Push report to CSPM panel
   - name: 'curlimages/curl'
     entrypoint: 'bash'
     args:
@@ -40,7 +29,7 @@ steps:
         curl --location --request POST 'https://cspm.demo.accuknox.com/api/v1/artifact/?tenant_id=167&data_type=IAC&save_to_s3=false' \
         --header 'Tenant-Id: 167' \
         --header 'Authorization: Bearer $(cat /workspace/decrypted-data.txt)' \
-        --form 'file=@"results.json"'
+        --form 'file=@"checkov_report.json"'
 
 # Artifacts to store the Checkov report
 artifacts:
@@ -48,7 +37,6 @@ artifacts:
     location: 'gs://aditya-cicd-test/checkov-reports/'
     paths: 
       - 'checkov_report.json'
-      - 'results.json'
 
 # Define substitutions
 substitutions:
