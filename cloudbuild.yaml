@@ -62,6 +62,6 @@ substitutions:
   _CSPM_URL: 'cspm.demo.accuknox.com'
   _TENANT_ID: '167'
   _BUCKET_NAME: 'gs://aditya-cicd-test'
-
+logsBucket: 'gs://aditya-cicd-test'
 # Define timeout for the entire pipeline
 timeout: '1200s' # 20 minutes
