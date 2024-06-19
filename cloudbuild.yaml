@@ -15,6 +15,15 @@ steps:
       - |
         pip install checkov && \
         checkov -d /workspace/AccuKnox_Iac --output json > /workspace/checkov_report.json || true
+  # Step 4: Verify if results.json exists and handle appending new data with jq
+  - name: 'bash'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ ! -f /workspace/checkov_report.json ]; then
+          echo '[]' > /workspace/checkov_report.json
+        fi
 
   # Step 3: Access the secret using gcloud and save it to a file
   - name: 'gcr.io/cloud-builders/gcloud'
