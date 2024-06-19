@@ -21,7 +21,7 @@ steps:
         gcloud secrets versions access latest --secret=accuknox_token --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/decrypted-data.txt
 
   # Step 4: Format the results (JSON manipulation)
-  - name: 'gcr.io/cloud-builders/bash'
+  - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -64,5 +64,6 @@ substitutions:
   _BUCKET_NAME: 'gs://aditya-cicd-test'
 
 # Define timeout for the entire pipeline
+
 timeout: '1200s' # 20 minutes
 logsBucket: 'gs://aditya-cicd-test'
