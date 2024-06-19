@@ -20,6 +20,31 @@ steps:
       - |
         gcloud secrets versions access latest --secret=accuknox_token --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/decrypted-data.txt
         # Debugging: Check the contents of decrypted-data.txt
+  - name: Formating the results
+    run: |
+    # Define variables for repo link and branch
+      repoLink="${{ github.server_url }}/${{ github.repository }}"
+      branch="${{ github.ref == 'refs/heads/main' && 'main' || github.head_ref }}"
+
+    # Construct the JSON fragment to append
+      new_fragment='{"details": {"repo": "'"$repoLink"'", "branch": "'"$branch"'"}}'
+
+    # Read the existing JSON file into a variable
+      existing_json=$(cat results/results_json.json)
+
+    # Check if the existing JSON is empty or not
+      if [ -z "$existing_json" ]; then
+        # If empty, initialize as an empty array
+          updated_json='['"$new_fragment"']'
+      else
+        # If not empty, append the new fragment to the existing JSON array
+          updated_json=$(echo "$existing_json" | jq '. += ['"$new_fragment"']')
+      fi
+
+    # Write the updated JSON back to the file
+      echo "$updated_json" > results/results_json.json
+    shell: bash
+
 
 # Step 4: Push report to CSPM panel
   - name: 'gcr.io/cloud-builders/curl'
