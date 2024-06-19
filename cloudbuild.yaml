@@ -1,7 +1,11 @@
 steps:
   # Step 1: Clone the GitHub repository
   - name: 'gcr.io/cloud-builders/git'
-    args: ['clone', 'https://github.com/th3-v3ng34nc3/AccuKnox-IaC-Scan-GCP.git', '/workspace/AccuKnox_Iac']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        git clone https://github.com/th3-v3ng34nc3/AccuKnox-IaC-Scan-GCP.git /workspace/AccuKnox_Iac
 
   # Step 2: Install Checkov and run the scan, saving the report in JSON format
   - name: 'python:3.8'
@@ -21,7 +25,7 @@ steps:
         gcloud secrets versions access latest --secret=accuknox_token --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/decrypted-data.txt
 
   # Step 4: Ensure results_json.json exists or initialize it
-  - name: Ensure results_json.json exists
+  - name: 'gcr.io/cloud-builders/bash'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -29,16 +33,15 @@ steps:
         touch /workspace/results_json.json
 
   # Step 5: Install jq for JSON manipulation
-  - name: Install jq
+  - name: 'gcr.io/cloud-builders/bash'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        apt-get update && \
-        apt-get install -y jq
+        apt-get update && apt-get install -y jq
 
   # Step 6: Format the results (JSON manipulation)
-  - name: Format the results
+  - name: 'gcr.io/cloud-builders/bash'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -55,15 +58,15 @@ steps:
         echo "$updated_json" > /workspace/results_json.json
 
   # Step 7: Push report to CSPM panel
-  - name: Push report to CSPM panel
+  - name: 'gcr.io/cloud-builders/curl'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
         curl --location --request POST "https://${_CSPM_URL}/api/v1/artifact/?tenant_id=${_TENANT_ID}&data_type=IAC&save_to_s3=false" \
-        --header "Tenant-Id: ${_TENANT_ID}" \
-        --header "Authorization: Bearer $(cat /workspace/decrypted-data.txt)" \
-        --form "file=@/workspace/checkov_report.json"
+          --header "Tenant-Id: ${_TENANT_ID}" \
+          --header "Authorization: Bearer $(cat /workspace/decrypted-data.txt)" \
+          --form "file=@/workspace/checkov_report.json"
 
 # Artifacts to store the Checkov report
 artifacts:
@@ -71,7 +74,7 @@ artifacts:
     location: 'gs://aditya-cicd-test/checkov-reports/'
     paths:
       - '/workspace/checkov_report.json'
-      - '/workspace/results_json.json'  # Include results_json.json as an artifact
+      - '/workspace/results_json.json'
 
 # Define substitutions
 substitutions:
@@ -81,5 +84,7 @@ substitutions:
   _TENANT_ID: '167'
   _BUCKET_NAME: 'gs://aditya-cicd-test'
 
+# Define timeout for the entire pipeline
 timeout: '1200s' # 20 minutes
+
 logsBucket: 'gs://aditya-cicd-test'
