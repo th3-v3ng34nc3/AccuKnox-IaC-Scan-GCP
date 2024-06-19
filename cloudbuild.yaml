@@ -24,7 +24,15 @@ steps:
       - |
         gcloud secrets versions access latest --secret=accuknox_token --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/decrypted-data.txt
 
-  # Step 7: Push report to CSPM panel
+  # Step 4: Format the results using jq
+  - name: 'gcr.io/cloud-builders/bash'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        jq --arg repoLink "${_GITHUB_SERVER_URL}/${_GITHUB_REPOSITORY}" --arg branch "${_GITHUB_REF/refs\/heads\//}" '. += [{"details": {"repo": $repoLink, "branch": $branch}}]' /workspace/results_json.json > /workspace/temp.json && mv /workspace/temp.json /workspace/results.json
+
+  # Step 5: Push report to CSPM panel
   - name: 'gcr.io/cloud-builders/curl'
     entrypoint: 'bash'
     args:
@@ -34,12 +42,15 @@ steps:
           --header "Tenant-Id: ${_TENANT_ID}" \
           --header "Authorization: Bearer $(cat /workspace/decrypted-data.txt)" \
           --form "file=@/workspace/checkov_report.json"
-# Step 4: Store the Checkov report as an artifact
+
+# Artifacts to store the Checkov report
 artifacts:
   objects:
     location: 'gs://aditya-cicd-test/checkov-reports/'
     paths: 
       - 'checkov_report.json'
+      - 'results.json'  # Ensure results.json is included as an artifact
+
 # Define substitutions
 substitutions:
   _IMAGE_URL: 'gcr.io/shaped-infusion-402417/python-app'
