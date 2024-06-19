@@ -24,7 +24,15 @@ steps:
       - |
         gcloud secrets versions access latest --secret=accuknox_token --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/decrypted-data.txt
 
-  # Step 4: Format the results using jq
+  # Step 4: Install jq for JSON manipulation
+  - name: 'bash'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        apt-get update && apt-get install -y jq
+
+  # Step 5: Format the results using jq
   - name: 'bash'
     entrypoint: 'bash'
     args:
@@ -32,7 +40,7 @@ steps:
       - |
         jq --arg repoLink "${_GITHUB_SERVER_URL}/${_GITHUB_REPOSITORY}" --arg branch "${_GITHUB_REF/refs\/heads\//}" '. += [{"details": {"repo": $repoLink, "branch": $branch}}]' /workspace/results_json.json > /workspace/temp.json && mv /workspace/temp.json /workspace/results.json
 
-  # Step 5: Push report to CSPM panel
+  # Step 6: Push report to CSPM panel
   - name: 'gcr.io/cloud-builders/curl'
     entrypoint: 'bash'
     args:
