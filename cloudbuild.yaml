@@ -20,13 +20,30 @@ steps:
       - |
         gcloud secrets versions access latest --secret=accuknox_token --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/decrypted-data.txt
 
-  # Step 4: Format the results (JSON manipulation)
-  - name: 'gcr.io/cloud-builders/gcloud'
+  # Step 4: Ensure results_json.json exists or initialize it
+  - name: Ensure results_json.json exists
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        repoLink=$(echo "${_GITHUB_SERVER_URL}/${_GITHUB_REPOSITORY}")
+        touch /workspace/results_json.json
+
+  # Step 5: Install jq for JSON manipulation
+  - name: Install jq
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        apt-get update && \
+        apt-get install -y jq
+
+  # Step 6: Format the results (JSON manipulation)
+  - name: Format the results
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        repoLink="${_GITHUB_SERVER_URL}/${_GITHUB_REPOSITORY}"
         branch=$(echo "${_GITHUB_REF}" | sed 's|refs/heads/||')
 
         new_fragment="{\"details\": {\"repo\": \"$repoLink\", \"branch\": \"$branch\"}}"
@@ -37,8 +54,8 @@ steps:
 
         echo "$updated_json" > /workspace/results_json.json
 
-  # Step 5: Push report to CSPM panel
-  - name: 'gcr.io/cloud-builders/curl'
+  # Step 7: Push report to CSPM panel
+  - name: Push report to CSPM panel
     entrypoint: 'bash'
     args:
       - '-c'
@@ -54,6 +71,7 @@ artifacts:
     location: 'gs://aditya-cicd-test/checkov-reports/'
     paths:
       - '/workspace/checkov_report.json'
+      - '/workspace/results_json.json'  # Include results_json.json as an artifact
 
 # Define substitutions
 substitutions:
@@ -62,8 +80,6 @@ substitutions:
   _CSPM_URL: 'cspm.demo.accuknox.com'
   _TENANT_ID: '167'
   _BUCKET_NAME: 'gs://aditya-cicd-test'
-
-# Define timeout for the entire pipeline
 
 timeout: '1200s' # 20 minutes
 logsBucket: 'gs://aditya-cicd-test'
