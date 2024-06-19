@@ -30,15 +30,7 @@ steps:
     args:
       - '-c'
       - |
-        apt-get update && apt-get install -y jq
-
-  # Step 5: Format the results using jq
-  - name: 'ubuntu'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        jq --arg repoLink "${_GITHUB_SERVER_URL}/${_GITHUB_REPOSITORY}" --arg branch "${_GITHUB_REF/refs\/heads\//}" '. += [{"details": {"repo": $repoLink, "branch": $branch}}]' /workspace/results_json.json > /workspace/temp.json && mv /workspace/temp.json /workspace/results.json
+        apt-get update && apt-get install -y jq && jq --arg repoLink "${_GITHUB_SERVER_URL}/${_GITHUB_REPOSITORY}" --arg branch "${_GITHUB_REF/refs\/heads\//}" '. += [{"details": {"repo": $repoLink, "branch": $branch}}]' /workspace/results_json.json > /workspace/temp.json && mv /workspace/temp.json /workspace/results.json
 
   # Step 6: Push report to CSPM panel
   - name: 'gcr.io/cloud-builders/curl'
