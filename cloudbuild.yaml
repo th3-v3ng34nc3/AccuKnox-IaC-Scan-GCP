@@ -10,43 +10,34 @@ steps:
       - '-c'
       - |
         pip install checkov && \
-        checkov -d /workspace/AccuKnox_Iac --output json > checkov_report.json || true
+        checkov -d /workspace/AccuKnox_Iac --output json > /workspace/checkov_report.json || true
 
-# Step 3: Access the secret using gcloud and save it to a file
+  # Step 3: Access the secret using gcloud and save it to a file
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
         gcloud secrets versions access latest --secret=accuknox_token --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/decrypted-data.txt
-        # Debugging: Check the contents of decrypted-data.txt
-  - name: Formating the results
-    run: |
-# Define variables for repo link and branch
-      repoLink="${{ github.server_url }}/${{ github.repository }}"
-      branch="${{ github.ref == 'refs/heads/main' && 'main' || github.head_ref }}"
 
-# Construct the JSON fragment to append
-      new_fragment='{"details": {"repo": "'"$repoLink"'", "branch": "'"$branch"'"}}'
+  # Step 4: Format the results (JSON manipulation)
+  - name: Format the results
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        repoLink=$(echo "${_GITHUB_SERVER_URL}/${_GITHUB_REPOSITORY}")
+        branch=$(echo "${_GITHUB_REF}" | sed 's|refs/heads/||')
 
-# Read the existing JSON file into a variable
-      existing_json=$(cat results/results_json.json)
+        new_fragment="{\"details\": {\"repo\": \"$repoLink\", \"branch\": \"$branch\"}}"
 
-# Check if the existing JSON is empty or not
-      if [ -z "$existing_json" ]; then
-# If empty, initialize as an empty array
-          updated_json='['"$new_fragment"']'
-      else
-# If not empty, append the new fragment to the existing JSON array
-          updated_json=$(echo "$existing_json" | jq '. += ['"$new_fragment"']')
-      fi
+        existing_json=$(cat /workspace/results_json.json || echo '[]')
 
-# Write the updated JSON back to the file
-      echo "$updated_json" > results/results_json.json
-    shell: bash
+        updated_json=$(echo "$existing_json" | jq ". += [$new_fragment]")
 
+        echo "$updated_json" > /workspace/results_json.json
 
-# Step 4: Push report to CSPM panel
+  # Step 5: Push report to CSPM panel
   - name: 'gcr.io/cloud-builders/curl'
     entrypoint: 'bash'
     args:
@@ -57,13 +48,12 @@ steps:
         --header "Authorization: Bearer $(cat /workspace/decrypted-data.txt)" \
         --form "file=@/workspace/checkov_report.json"
 
-
 # Artifacts to store the Checkov report
 artifacts:
   objects:
     location: 'gs://aditya-cicd-test/checkov-reports/'
     paths:
-      - 'checkov_report.json'
+      - '/workspace/checkov_report.json'
 
 # Define substitutions
 substitutions:
@@ -73,5 +63,5 @@ substitutions:
   _TENANT_ID: '167'
   _BUCKET_NAME: 'gs://aditya-cicd-test'
 
-logsBucket: 'gs://aditya-cicd-test'
+# Define timeout for the entire pipeline
 timeout: '1200s' # 20 minutes
