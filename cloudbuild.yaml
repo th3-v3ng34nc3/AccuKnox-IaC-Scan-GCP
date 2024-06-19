@@ -17,45 +17,12 @@ steps:
         checkov -d /workspace/AccuKnox_Iac --output json > /workspace/checkov_report.json || true
 
   # Step 3: Access the secret using gcloud and save it to a file
-  - name: 'ubuntu'
+  - name: 'gcr.io/cloud-builders/bash'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
         gcloud secrets versions access latest --secret=accuknox_token --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/decrypted-data.txt
-
-  # Step 4: Ensure results_json.json exists or initialize it
-  - name: 'ubuntu'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        touch /workspace/results_json.json
-
-  # Step 5: Install jq for JSON manipulation
-  - name: 'ubuntu'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        apt-get update && apt-get install -y jq
-
-  # Step 6: Format the results (JSON manipulation)
-  - name: 'ubuntu'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        repoLink="${_GITHUB_SERVER_URL}/${_GITHUB_REPOSITORY}"
-        branch=$(echo "${_GITHUB_REF}" | sed 's|refs/heads/||')
-
-        new_fragment="{\"details\": {\"repo\": \"$repoLink\", \"branch\": \"$branch\"}}"
-
-        existing_json=$(cat /workspace/results_json.json || echo '[]')
-
-        updated_json=$(echo "$existing_json" | jq ". += [$new_fragment]")
-
-        echo "$updated_json" > /workspace/results_json.json
 
   # Step 7: Push report to CSPM panel
   - name: 'gcr.io/cloud-builders/curl'
@@ -67,14 +34,6 @@ steps:
           --header "Tenant-Id: ${_TENANT_ID}" \
           --header "Authorization: Bearer $(cat /workspace/decrypted-data.txt)" \
           --form "file=@/workspace/checkov_report.json"
-
-# Artifacts to store the Checkov report
-artifacts:
-  objects:
-    location: 'gs://aditya-cicd-test/checkov-reports/'
-    paths:
-      - '/workspace/checkov_report.json'
-      - '/workspace/results_json.json'
 
 # Define substitutions
 substitutions:
