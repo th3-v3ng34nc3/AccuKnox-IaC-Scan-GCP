@@ -17,7 +17,7 @@ steps:
         checkov -d /workspace/AccuKnox_Iac --output json > /workspace/checkov_report.json || true
 
   # Step 3: Access the secret using gcloud and save it to a file
-  - name: 'gcr.io/cloud-builders/gcloud'
+  - name: 'ubuntu'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -25,7 +25,7 @@ steps:
         gcloud secrets versions access latest --secret=accuknox_token --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/decrypted-data.txt
 
   # Step 4: Ensure results_json.json exists or initialize it
-  - name: 'gcr.io/cloud-builders/gcloud'
+  - name: 'ubuntu'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -33,7 +33,7 @@ steps:
         touch /workspace/results_json.json
 
   # Step 5: Install jq for JSON manipulation
-  - name: 'gcr.io/cloud-builders/bash'
+  - name: 'ubuntu'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -41,7 +41,7 @@ steps:
         apt-get update && apt-get install -y jq
 
   # Step 6: Format the results (JSON manipulation)
-  - name: 'gcr.io/cloud-builders/bash'
+  - name: 'ubuntu'
     entrypoint: 'bash'
     args:
       - '-c'
