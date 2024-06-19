@@ -17,7 +17,7 @@ steps:
         checkov -d /workspace/AccuKnox_Iac --output json > /workspace/checkov_report.json || true
 
   # Step 3: Access the secret using gcloud and save it to a file
-  - name: 'gcr.io/cloud-builders/bash'
+  - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
       - '-c'
