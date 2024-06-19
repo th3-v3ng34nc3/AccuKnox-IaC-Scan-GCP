@@ -34,7 +34,12 @@ steps:
           --header "Tenant-Id: ${_TENANT_ID}" \
           --header "Authorization: Bearer $(cat /workspace/decrypted-data.txt)" \
           --form "file=@/workspace/checkov_report.json"
-
+# Step 4: Store the Checkov report as an artifact
+artifacts:
+  objects:
+    location: 'gs://aditya-cicd-test/checkov-reports/'
+    paths: 
+      - 'checkov_report.json'
 # Define substitutions
 substitutions:
   _IMAGE_URL: 'gcr.io/shaped-infusion-402417/python-app'
