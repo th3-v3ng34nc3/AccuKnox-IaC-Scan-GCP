@@ -25,7 +25,7 @@ steps:
         gcloud secrets versions access latest --secret=accuknox_token --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/decrypted-data.txt
 
   # Step 4: Install jq for JSON manipulation
-  - name: 'bash'
+  - name: 'ubuntu'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -33,7 +33,7 @@ steps:
         apt-get update && apt-get install -y jq
 
   # Step 5: Format the results using jq
-  - name: 'bash'
+  - name: 'ubuntu'
     entrypoint: 'bash'
     args:
       - '-c'
