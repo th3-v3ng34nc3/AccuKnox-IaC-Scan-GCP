@@ -33,14 +33,20 @@ steps:
       - |
         gcloud secrets versions access latest --secret=accuknox_token --format='get(payload.data)' | tr '_-' '/+' | base64 -d > /workspace/decrypted-data.txt
 
-  # Step 4: Install jq for JSON manipulation
+# Step 4: Install jq and manipulate JSON using echo, cat, and jq
   - name: 'ubuntu'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        apt-get update && apt-get install -y jq && jq --arg repoLink "${_GITHUB_SERVER_URL}/${_GITHUB_REPOSITORY}" --arg branch "${_GITHUB_REF/refs\/heads\//}" '. += [{"details": {"repo": $repoLink, "branch": $branch}}]' /workspace/checkov_report.json > /workspace/temp.json && mv /workspace/temp.json /workspace/results.json
-
+        apt-get update && apt-get install -y jq && \
+        echo '[' > /workspace/tmp.json && \
+        cat /workspace/checkov_report.json >> /workspace/tmp.json && \
+        echo ']' >> /workspace/tmp.json && \
+        jq --arg repoLink "${_GITHUB_SERVER_URL}/${_GITHUB_REPOSITORY}" \
+           --arg branch "${_GITHUB_REF/refs\/heads\//}" \
+           '. += [{"details": {"repo": $repoLink, "branch": $branch}}]' /workspace/tmp.json > /workspace/results.json && \
+        rm /workspace/tmp.json
   # Step 6: Push report to CSPM panel
   - name: 'gcr.io/cloud-builders/curl'
     entrypoint: 'bash'
