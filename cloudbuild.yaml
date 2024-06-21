@@ -16,16 +16,6 @@ steps:
         pip install checkov && \
         checkov -d /workspace/AccuKnox_Iac --output json > /workspace/checkov_report.json || true
 
-  # Step 4: Verify if checkov_report.json exists and handle appending new data with jq
-  - name: 'bash'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        if [ ! -f /workspace/checkov_report.json ]; then
-          echo '[]' > /workspace/checkov_report.json
-        fi
-
   # Step 3: Access the secret using gcloud and save it to a file
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
@@ -53,8 +43,8 @@ steps:
           jq --arg repoLink "${repository}" --arg branch "${branch}" \
              '. += [{"details": {"repo": $repoLink, "branch": $branch}}]' \
              /workspace/results.json > /workspace/tmp.json && \
-          mv /workspace/tmp.json /workspace/checkov_report.json && \
-        fi
+          mv /workspace/tmp.json /workspace/checkov_report.json; \
+        fi  # Removed unnecessary && here
 
   # Step 6: Push report to CSPM panel
   - name: 'gcr.io/cloud-builders/curl'
