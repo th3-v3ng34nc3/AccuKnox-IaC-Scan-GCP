@@ -43,15 +43,15 @@ steps:
         if [ "." = "${directory}" ] && [ -z "${file}" ]; then \
           jq --arg repoLink "${repository}" --arg branch "${branch}" \
              '. += [{"details": {"repo": $repoLink, "branch": $branch}}]' \
-             /workspace/results.json > /workspace/tmp.json && \
-          mv /workspace/tmp.json /workspace/results.json; \
+             /workspace/checkov_report.json > /workspace/tmp.json && \
+          mv /workspace/tmp.json /workspace/checkov_report.json; \
         else \
           echo '[' > /workspace/tmp.json && \
-          cat /workspace/results.json >> /workspace/tmp.json && \
+          cat /workspace/checkov_report.json >> /workspace/tmp.json && \
           echo ']' >> /workspace/tmp.json && \
           jq --arg repoLink "${repository}" --arg branch "${branch}" \
              '. += [{"details": {"repo": $repoLink, "branch": $branch}}]' \
-             /workspace/tmp.json > /workspace/results.json && \
+             /workspace/tmp.json > /workspace/checkov_report.json && \
           rm /workspace/tmp.json; \
         fi
 
