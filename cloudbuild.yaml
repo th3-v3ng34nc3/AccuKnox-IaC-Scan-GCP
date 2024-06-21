@@ -54,7 +54,6 @@ steps:
              '. += [{"details": {"repo": $repoLink, "branch": $branch}}]' \
              /workspace/results.json > /workspace/tmp.json && \
           mv /workspace/tmp.json /workspace/checkov_report.json && \
-          rm /workspace/results.json; \
         fi
 
   # Step 6: Push report to CSPM panel
